@@ -1,11 +1,23 @@
 package com.example.kalogchen.weather.util;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.icu.text.SimpleDateFormat;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.example.kalogchen.weather.db.WeatherDB;
 import com.example.kalogchen.weather.model.City;
 import com.example.kalogchen.weather.model.County;
 import com.example.kalogchen.weather.model.Province;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by kalogchen on 2016/11/26.
@@ -22,8 +34,8 @@ public class Utility {
             String[] allProvince = response.split(",");
             if (allProvince != null && allProvince.length > 0) {
                 for (String p : allProvince) {
-                    String[] array =  p.split("\\|");
-                    Province province =  new Province();
+                    String[] array = p.split("\\|");
+                    Province province = new Province();
                     province.setProvinceCode(array[0]);
                     province.setProvinceName(array[1]);
                     weatherDB.saveProvince(province);
@@ -74,6 +86,52 @@ public class Utility {
             }
         }
         return false;
+    }
+
+    /**
+     * 解析服务器返回的json数据，并将解析出的数据保存到本地。
+     */
+    public static void handleWeatherResponse(Context context, String response) {
+        Log.d("dd", "天气信息 -------------------" + response);
+        try {
+            JSONObject jsonObject = new JSONObject(response);
+            JSONArray results = jsonObject.getJSONArray("results");
+            if (results.length() > 0) {
+                JSONObject obj = results.getJSONObject(0);
+                String cityName = obj.getString("currentCity");
+                JSONArray weather_data = obj.getJSONArray("weather_data");
+                JSONObject object = weather_data.getJSONObject(0);
+                String temp = object.getString("temperature");
+                String wetherDesc = object.getString("weather");
+                String pTime = object.getString("date");
+                Log.d("dd", "解析到的数据-----------" + "--------" + cityName + "--------" + wetherDesc + "--------" +  pTime);
+
+                saveWeatherInfo(context, cityName, temp, wetherDesc, pTime);
+            }
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Log.d("dd", "json解析失败---------");
+        }
+    }
+
+    /**
+     * 将服务器返回的所有天气信息存储到SharedPreferences文件中
+     */
+    public static void saveWeatherInfo(Context context, String cityName, String temp,
+                                       String weatherDesc, String pTime) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy年MM月dd日", Locale.CHINA);
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor edit = sp.edit();
+        edit.putBoolean("city_selected", true);
+        edit.putString("city_name", cityName);
+        edit.putString("temp", temp);
+        edit.putString("weatherDesc", weatherDesc);
+        edit.putString("publish_time", pTime);
+        edit.putString("current_time", dateFormat.format(new Date()));
+        edit.commit();
     }
 
 

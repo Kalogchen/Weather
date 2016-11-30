@@ -19,11 +19,13 @@ public class HttpUtil {
             public void run() {
                 HttpURLConnection connection = null;
                 try {
+                    Log.d("dd", "准备建立连接---------");
                     URL url = new URL(address);
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
                     connection.setReadTimeout(8000);
                     connection.setReadTimeout(8000);
+                    Log.d("dd", "建立链接成功----------");
                     InputStream in = connection.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                     StringBuilder response = new StringBuilder();
@@ -31,7 +33,7 @@ public class HttpUtil {
                     while ((line = reader.readLine()) != null) {
                         response.append(line);
                     }
-                    Log.d("msg", "获取到的数据------------------" + String.valueOf(response));
+                    Log.d("dd", "获取到的数据------------------" + String.valueOf(response));
                     if (listener != null) {
                         //回调onFinish()方法
                         listener.onFinish(response.toString());

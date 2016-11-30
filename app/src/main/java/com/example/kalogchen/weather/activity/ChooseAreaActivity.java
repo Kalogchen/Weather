@@ -2,7 +2,10 @@ package com.example.kalogchen.weather.activity;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
@@ -74,30 +77,43 @@ public class ChooseAreaActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.choose_area);
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sp.getBoolean("city_selected", false)) {
+            final Intent intent = new Intent(this, WeatherActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
+            setContentView(R.layout.choose_area);
 
-        tv_title = (TextView) findViewById(R.id.tv_title);
-        lv_area = (ListView) findViewById(R.id.lv_area);
+            tv_title = (TextView) findViewById(R.id.tv_title);
+            lv_area = (ListView) findViewById(R.id.lv_area);
 
-        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, dataList);
-        lv_area.setAdapter(adapter);
-        weatherDB = WeatherDB.getInstance(this);
-        lv_area.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (currentLevel == LEVEL_PROVINCE) {
-                    selectedProvince = provinceList.get(position);
-                    queryCities();
-                }else if (currentLevel == LEVEL_CITY) {
-                    selectedCity = cityList.get(position);
-                    queryCounties();
+            adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, dataList);
+            lv_area.setAdapter(adapter);
+            weatherDB = WeatherDB.getInstance(this);
+            lv_area.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    if (currentLevel == LEVEL_PROVINCE) {
+                        selectedProvince = provinceList.get(position);
+                        queryCities();
+                    } else if (currentLevel == LEVEL_CITY) {
+                        selectedCity = cityList.get(position);
+                        queryCounties();
+                    } else if (currentLevel == LEVEL_COUNTY) {
+                        String countyName = countyList.get(position).getCountyName();
+                        Intent intent = new Intent(ChooseAreaActivity.this, WeatherActivity.class);
+                        intent.putExtra("county_name", countyName);
+                        startActivity(intent);
+                        finish();
+                    }
+
                 }
-
-            }
-        });
-        queryProvinces();//加载省数据
-    }
+            });
+            queryProvinces();//加载省数据
+        }
 
     /**
      * 查询全国所有的省，优先从数据库查询，如果数据库没有则从服务器查询
@@ -180,7 +196,7 @@ public class ChooseAreaActivity extends Activity {
                     result = Utility.handleCountiesResponse(weatherDB, response, selectedCity.getId());
                 }
                 if (result) {
-                    //通过runOnUiThread（）方法回到主线程呢个处理逻辑
+                    //通过runOnUiThread（）方法回到主线程处理逻辑
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
