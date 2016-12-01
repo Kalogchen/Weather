@@ -89,9 +89,9 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
             case R.id.bt_refresh:
                 updateTime.setText("更新中...");
                 SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-                String cityId = sp.getString("city_id", null);
-                if (!TextUtils.isEmpty(cityId)) {
-                    queryWeatherInfo(cityId);
+                String city_name = sp.getString("city_name", null);
+                if (!TextUtils.isEmpty(city_name)) {
+                    queryWeatherInfo(city_name);
                 }
                 break;
             default:
@@ -103,10 +103,10 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
     /**
      * 查询县级拼接请求链接
      *
-     * @param countyName
+     * @param cityName
      */
-    private void queryWeatherInfo(String countyName) {
-        String address = "http://api.map.baidu.com/telematics/v3/weather?location=" + countyName +"&output=json&ak=YCSK2uqKRutUv3EA8fxA6IEyKRWPp4a1&mcode=B4:B2:3D:54:1E:B7:F4:D0:6F:B5:2F:D6:8F:4A:23:75:82:DD:D3:28;com.example.kalogchen.weather";
+    private void queryWeatherInfo(String cityName) {
+        String address = "http://api.map.baidu.com/telematics/v3/weather?location=" + cityName +"&output=json&ak=YCSK2uqKRutUv3EA8fxA6IEyKRWPp4a1&mcode=B4:B2:3D:54:1E:B7:F4:D0:6F:B5:2F:D6:8F:4A:23:75:82:DD:D3:28;com.example.kalogchen.weather";
         queryFromServer(address);
     }
 
