@@ -19,13 +19,11 @@ public class HttpUtil {
             public void run() {
                 HttpURLConnection connection = null;
                 try {
-                    Log.d("dd", "准备建立连接---------");
                     URL url = new URL(address);
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("GET");
+                    connection.setConnectTimeout(8000);
                     connection.setReadTimeout(8000);
-                    connection.setReadTimeout(8000);
-                    Log.d("dd", "建立链接成功----------");
                     InputStream in = connection.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                     StringBuilder response = new StringBuilder();

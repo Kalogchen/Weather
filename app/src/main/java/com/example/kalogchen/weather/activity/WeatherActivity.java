@@ -3,19 +3,30 @@ package com.example.kalogchen.weather.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.kalogchen.weather.R;
+import com.example.kalogchen.weather.service.AutoUpdateService;
 import com.example.kalogchen.weather.util.HttpCallbackListener;
 import com.example.kalogchen.weather.util.HttpUtil;
 import com.example.kalogchen.weather.util.Utility;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Created by kalogchen on 2016/11/29.
@@ -30,6 +41,9 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
 
     //发布时间
     private TextView updateTime;
+
+    //天气图片
+    private ImageView ivWeather;
 
     //天气描述信息
     private TextView weatherDesc;
@@ -56,6 +70,7 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
         weatherInfoLayout = (LinearLayout) findViewById(R.id.layout_weather_info);
         cityName = (TextView) findViewById(R.id.tv_city_name);
         updateTime = (TextView) findViewById(R.id.tv_update_time);
+        ivWeather = (ImageView) findViewById(R.id.iv_weather);
         weatherDesc = (TextView) findViewById(R.id.tv_weather_desc);
         temp = (TextView) findViewById(R.id.temp);
         currentData = (TextView) findViewById(R.id.tv_current_data);
@@ -149,16 +164,74 @@ public class WeatherActivity extends Activity implements View.OnClickListener {
      * 从SharedPreferences文件中读取存储的天气信息，并显示到界面上
      */
     private void showWeather() {
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        final SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         cityName.setText(sp.getString("city_name", "解析失败"));
         temp.setText(sp.getString("temp", ""));
         weatherDesc.setText(sp.getString("weatherDesc", ""));
         updateTime.setText("更新时间：" + sp.getString("publish_time", ""));
-        currentData.setText(sp.getString("current_time", ""));
+        //获取时间年月日
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy年MM月dd日");
+        String format = dateFormat.format(new java.util.Date());
+        Log.d("ss", "--------现在日期-------" + format);
+        currentData.setText(format);
         weatherInfoLayout.setVisibility(View.VISIBLE);
         cityName.setVisibility(View.VISIBLE);
 
+        //新建子线程，加载图片
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String dayNight;
+                SimpleDateFormat hh = new SimpleDateFormat("HH");
+                String format = hh.format(new Date());
+                int i = Integer.parseInt(format);
+                Log.d("ss", "--------------时针为:-----" + i);
+                if (i < 18 && i > 6) {
+                    dayNight = sp.getString("dayPictureUrl", "");
+                }else {
+                    dayNight = sp.getString("nightPictureUrl", "");
+                }
+                final Bitmap bitmap = getHttpBitmap(dayNight);
+                //view的post方法是运行在主线程中的，因为所有view都自带一个handler，所有handler都有post方法
+                ivWeather.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ivWeather.setImageBitmap(bitmap);
+                    }
+                });
+            }
+        }).start();
 
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
+    }
+
+    public static Bitmap getHttpBitmap(String address) {
+        URL myFileURL;
+        Bitmap bitmap=null;
+        try{
+            myFileURL = new URL(address);
+            //获得连接
+            HttpURLConnection conn=(HttpURLConnection)myFileURL.openConnection();
+            //设置超时时间为6000毫秒，conn.setConnectionTiem(0);表示没有时间限制
+            conn.setConnectTimeout(6000);
+            //连接设置获得数据流
+            conn.setDoInput(true);
+            //不使用缓存
+            conn.setUseCaches(false);
+            //这句可有可无，没有影响
+            conn.connect();
+            //得到数据流
+            InputStream is = conn.getInputStream();
+            Log.d("ss", "--获取到的图片数据流：---------" + is);
+            //解析得到图片
+            bitmap = BitmapFactory.decodeStream(is);
+            //关闭数据流
+            is.close();
+        }catch(Exception e){
+            Log.d("ss", "------------------天气图片获取失败");
+        }
+        return bitmap;
     }
 
 }
